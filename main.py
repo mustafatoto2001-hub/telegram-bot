@@ -74,7 +74,8 @@ def start_telegram_bot():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.REPLY, handle_user_message))
     application.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
     
-    application.run_polling(drop_pending_updates=True)
+    # تعطيل stop_signals ليعمل داخل Thread بدون أخطاء
+    application.run_polling(drop_pending_updates=True, stop_signals=None)
 
 # تشغيل البوت في الخلفية
 bot_thread = Thread(target=start_telegram_bot)
