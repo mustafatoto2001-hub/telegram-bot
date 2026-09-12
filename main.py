@@ -1,20 +1,17 @@
 import logging
 import os
+import asyncio
 from threading import Thread
 from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-# --- 1. خادم ويب لـ Render ---
-app_flask = Flask(__name__)
+# --- 1. خادم الويب ---
+app = Flask(__name__)
 
-@app_flask.route('/')
+@app.route('/')
 def home():
-    return "Bot is alive!"
-
-def run_flask():
-    port = int(os.environ.get('PORT', 8080))
-    app_flask.run(host='0.0.0.0', port=port)
+    return "Bot is running live!"
 
 # --- 2. إعدادات البوت ---
 TOKEN = "8381682425:AAGe4b02xncsIbiVt89cDjmuSojT2_NZ-8U"
@@ -60,21 +57,26 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 chat_id=target_chat_id,
                 text=update.message.text
             )
-            await update.message.reply_text(" تم إرسال ردك بنجاح للمتابع!")
+            await update.message.reply_text("✅ تم إرسال ردك بنجاح للمتابع!")
         else:
-            await update.message.reply_text("⚠️ تعذر العثور على صاحب الرسالة.")
+            await update.message.reply_text("تعذر العثور على صاحب الرسالة.")
 
-# --- 3. التشغيل ---
-if __name__ == 'main':
-    # تشغيل سيرفر الفلاسك في Thread منفصل
-    server_thread = Thread(target=run_flask)
-    server_thread.daemon = True
-    server_thread.start()
-
-    # تشغيل البوت عبر run_polling القياسي
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.REPLY, handle_user_message))
-    app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
+def start_telegram_bot():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
-    app.run_polling(drop_pending_updates=True)
+    application = ApplicationBuilder().token(TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.REPLY, handle_user_message))
+    application.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
+    
+    application.run_polling(drop_pending_updates=True)
+
+# تشغيل البوت في الخلفية عند تحميل التطبيق
+bot_thread = Thread(target=start_telegram_bot)
+bot_thread.daemon = True
+bot_thread.start()
+
+if __name__ == 'main':
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
