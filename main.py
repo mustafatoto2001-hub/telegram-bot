@@ -1,23 +1,22 @@
 import logging
 import os
-import asyncio
 from threading import Thread
 from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-# --- خادم ويب خفيف لإرضاء منصة Render ---
-app_flask = Flask('')
+# --- 1. خادم ويب لـ Render ---
+app_flask = Flask(name)
 
 @app_flask.route('/')
 def home():
-    return "Bot is running live!"
+    return "Bot is alive!"
 
 def run_flask():
     port = int(os.environ.get('PORT', 8080))
     app_flask.run(host='0.0.0.0', port=port)
 
-# --- كود البوت الأساسي ---
+# --- 2. إعدادات البوت ---
 TOKEN = "8381682425:AAGe4b02xncsIbiVt89cDjmuSojT2_NZ-8U"
 MY_CHAT_ID = 5208623315
 
@@ -65,24 +64,17 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         else:
             await update.message.reply_text("⚠️ تعذر العثور على صاحب الرسالة.")
 
-async def main():
-    # تشغيل Flask في الخلفية
-    t = Thread(target=run_flask)
-    t.daemon = True
-    t.start()
+# --- 3. التشغيل ---
+if __name__ == 'main':
+    # تشغيل سيرفر الفلاسك في Thread منفصل
+    server_thread = Thread(target=run_flask)
+    server_thread.daemon = True
+    server_thread.start()
 
-    # تشغيل البوت
+    # تشغيل البوت عبر run_polling القياسي
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.REPLY, handle_user_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
-
-    async with app:
-        await app.initialize()
-        await app.start()
-        await app.updater.start_polling()
-        # يبقي العملية شغالة بدون إغلاق
-        await asyncio.Event().wait()
-
-if __name__ == 'main':
-    asyncio.run(main())
+    
+    app.run_polling(drop_pending_updates=True)
