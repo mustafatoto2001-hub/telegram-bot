@@ -1,25 +1,21 @@
 import logging
 import os
+import asyncio
 from threading import Thread
 from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-# --- خادم ويب خفيف ليرضي منصة Render ---
+# --- خادم ويب خفيف لإرضاء منصة Render ---
 app_flask = Flask('')
 
 @app_flask.route('/')
 def home():
-    return "Bot is running live on Render!"
+    return "Bot is running live!"
 
 def run_flask():
     port = int(os.environ.get('PORT', 8080))
     app_flask.run(host='0.0.0.0', port=port)
-
-def keep_alive():
-    t = Thread(target=run_flask)
-    t.daemon = True
-    t.start()
 
 # --- كود البوت الأساسي ---
 TOKEN = "8381682425:AAGe4b02xncsIbiVt89cDjmuSojT2_NZ-8U"
@@ -69,13 +65,24 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         else:
             await update.message.reply_text("⚠️ تعذر العثور على صاحب الرسالة.")
 
-if __name__ == 'main':
-    keep_alive()
+async def main():
+    # تشغيل Flask في الخلفية
+    t = Thread(target=run_flask)
+    t.daemon = True
+    t.start()
+
+    # تشغيل البوت
     app = ApplicationBuilder().token(TOKEN).build()
-    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.REPLY, handle_user_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
-    
-    print("البوت يعمل بنجاح...")
-    app.run_polling()
+
+    async with app:
+        await app.initialize()
+        await app.start()
+        await app.updater.start_polling()
+        # يبقي العملية شغالة بدون إغلاق
+        await asyncio.Event().wait()
+
+if __name__ == 'main':
+    asyncio.run(main())
