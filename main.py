@@ -13,8 +13,8 @@ app = Flask(__name__)
 def home():
     return "Bot is running live!"
 
-# --- 2. إعدادات البوت ---
-TOKEN = "8381682425:AAHdybrn5r7Q0cKqtl60T5kc7jH0PmdCkr4"
+# --- 2. إعدادات البوت والتوكن الآمن ---
+TOKEN = os.environ.get("BOT_TOKEN")
 MY_CHAT_ID = 5208623315
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -57,11 +57,15 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 chat_id=target_chat_id,
                 text=update.message.text
             )
-            await update.message.reply_text("✅ تم إرسال ردك بنجاح للمتابع!")
+            await update.message.reply_text(" تم إرسال ردك بنجاح للمتابع!")
         else:
-            await update.message.reply_text("تعذر العثور على صاحب الرسالة.")
+            await update.message.reply_text("⚠️ تعذر العثور على صاحب الرسالة.")
 
 def start_telegram_bot():
+    if not TOKEN:
+        logging.error("خطأ: لم يتم العثور على BOT_TOKEN في متغيرات البيئة!")
+        return
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
@@ -72,7 +76,7 @@ def start_telegram_bot():
     
     application.run_polling(drop_pending_updates=True)
 
-# تشغيل البوت في الخلفية عند تحميل التطبيق
+# تشغيل البوت في الخلفية
 bot_thread = Thread(target=start_telegram_bot)
 bot_thread.daemon = True
 bot_thread.start()
