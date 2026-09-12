@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
 # --- 1. خادم ويب لـ Render ---
-app_flask = Flask(name)
+app_flask = Flask(__name__)
 
 @app_flask.route('/')
 def home():
