@@ -14,7 +14,7 @@ def home():
     return "Bot is running live!"
 
 # --- 2. إعدادات البوت ---
-TOKEN = "8381682425:AAGe4b02xncsIbiVt89cDjmuSojT2_NZ-8U"
+TOKEN = "8381682425:AAHdybrn5r7Q0cKqtl60T5kc7jH0PmdCkr4"
 MY_CHAT_ID = 5208623315
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
